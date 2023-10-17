@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalR</title>
+</head>
+<style>
+    body {
+        background: #535151;
+        color: #eee8e8;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+</style>
+
+<body>
+    <h1>Datos en Tiempo Real</h1>
+
+    <div id="datosEnTiempoReal">
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+
+
+    <script>
+
+        const datosEnTiempoRealDiv = document.getElementById("datosEnTiempoReal");
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("https://localhost:7223/dataHubDevice")
+            .build();
+
+        const username = localStorage.getItem('username');
+
+        connection.start()
+            .then(() => {
+                return connection.invoke("UnirGrupo", username);
+            })
+            .then(() => {
+                console.log(`Conexión SignalR establecida y unido al grupo:${ username }`);
+            })
+            .catch((error) => {
+                console.error("Error al conectar con SignalR:", error);
+            });
+
+        connection.on("ActualizarDatos", (datos) => {
+            const fechaActual = datos.fechaActual;
+            const datosDevice = datos.datosDevice;
+
+            datosEnTiempoRealDiv.innerHTML = "";
+
+            const fechaActualHTML = `<p>Fecha Actual: ${fechaActual}</p>`;
+            datosEnTiempoRealDiv.innerHTML += fechaActualHTML;
+
+            datosDevice.forEach((device) => {
+                const deviceInfo = `
+                    <div>
+                        <p>Device ID: ${device.deviceId}</p>
+                        <p>Latitude: ${device.lastValidLatitude}</p>
+                        <p>Longitude: ${device.lastValidLongitude}</p>
+                <!-- Agrega aquí más propiedades que desees mostrar -->
+                    </div>
+                    `;
+                datosEnTiempoRealDiv.innerHTML += deviceInfo;
+            });
+        });
+
+
+    </script>
+
+</body>
+
+</html>
